@@ -1,11 +1,9 @@
 import './App.css';
-import Viewer from './Viewer';
+import Viewer from './components/Viewer';
 
 function App() {
   return (
-    <div className="Viewer">
-      <Viewer className="Viewer"></Viewer>
-    </div>
+    <Viewer className="Viewer"></Viewer>
   );
 }
 
