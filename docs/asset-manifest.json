@@ -1,10 +1,10 @@
 {
   "files": {
-    "main.css": "/static/css/main.505d172b.css",
-    "main.js": "/static/js/main.0cbfccd4.js",
-    "index.html": "/index.html",
-    "main.505d172b.css.map": "/static/css/main.505d172b.css.map",
-    "main.0cbfccd4.js.map": "/static/js/main.0cbfccd4.js.map"
+    "main.css": "/resistance-playground/static/css/main.505d172b.css",
+    "main.js": "/resistance-playground/static/js/main.0cbfccd4.js",
+    "index.html": "/resistance-playground/index.html",
+    "main.505d172b.css.map": "/resistance-playground/static/css/main.505d172b.css.map",
+    "main.0cbfccd4.js.map": "/resistance-playground/static/js/main.0cbfccd4.js.map"
   },
   "entrypoints": [
     "static/css/main.505d172b.css",
