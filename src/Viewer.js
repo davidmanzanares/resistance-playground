@@ -4,6 +4,8 @@ import { Canvas, useFrame } from '@react-three/fiber'
 import { Box, Line, Point, Points, Text } from '@react-three/drei'
 import { useRef, useState } from 'react'
 
+const RESISTOR_COLOR = "#f33"
+
 function clamp(x, min, max){
   return Math.min(Math.max(x, min), max);
 }
@@ -42,13 +44,15 @@ function ElectricalLine(props){
 
   const density = 6;
   const numPoints = Math.round(lineLength*density);
-  const pointRefs = [...Array(numPoints).keys()].map(useRef);
-  const electricPoints = pointRefs.map((ref, i) => 
-    (<Point position={vToPos(i/density)} key={i} ref={ref} v={i/density}/>)
+  const pointRefs = useRef([]);
+  pointRefs.current = [...Array(numPoints).keys()].map(i => pointRefs.current[i] ?? React.createRef());
+  const electricPoints = [...Array(numPoints).keys()].map(i => 
+    (<Point position={vToPos(i/density)} key={i} ref={pointRefs.current[i]} v={i/density}/>)
   );
 
   useFrame((state, delta) => {
-    pointRefs.forEach(ref => {
+    electricPoints.forEach((_, i) => {
+      const ref = pointRefs.current[i];
       ref.current.v = (4.*delta*props.current + ref.current.v) % lineLength;
       const p = vToPos(ref.current.v);
       ref.current.position.set(p.x, p.y, p.z);
@@ -132,7 +136,7 @@ function Resistor (props) {
     const middleLines = subPoints.slice(0, subPoints.length-1).map((p, index) => {
       return       (<Line
       points={[p, subPoints[index+1]]}
-      color="red"
+      color={RESISTOR_COLOR}
       lineWidth={1}
       key={index}
       />);
@@ -145,12 +149,12 @@ function Resistor (props) {
         onPointerMove={ev => {hover(ev.point)}} onPointerLeave={ev=> hover(new THREE.Vector3(10000,0,0))}/>
       <Line
         points={[src, start]}
-        color="red"
+        color={RESISTOR_COLOR}
         lineWidth={1}
         />
       <Line
         points={[end, dst]}
-        color="red"
+        color={RESISTOR_COLOR}
         lineWidth={1}
         />
       {middleLines}
@@ -161,22 +165,15 @@ function Resistor (props) {
     )
 }
 
-
-export default function Viewer() {
-  const batteryVoltage = 7;
-  const circuit = [
-    [15],
-    [30, 100],
-    [3],
-  ];
+function Circuit(props) {
+  const batteryVoltage = props.batteryVoltage;
+  const circuit = props.circuit;
   function getCircuitResistance(circuit) {
     return circuit.map(parallelResistors =>  1 / parallelResistors.map(x=>1/x).reduce((x,y) => x+y))
             .reduce((x,y)=>x+y);
   }
   const circuitResistance = getCircuitResistance(circuit);
   const circuitCurrent = batteryVoltage/circuitResistance;
-  console.log("circuitResistance", circuitResistance)
-  console.log("circuitCurrent", circuitCurrent)
 
   const circuitComponents = [];
   const battery = (<Battery negative={[-0.4,3,0]} positive={[0.1,3,0]} key="battery"/>);
@@ -210,7 +207,6 @@ export default function Viewer() {
       const vPostResistors = lastVoltage - vDrop;
       const current1 = vDrop / resistors[0];
       const current2 = vDrop / resistors[1];
-      console.log("C!", current1, current2)
       const linePreMid1 = last.clone().add(new THREE.Vector3(0.5, 0., 0));
       const linePreEnd1 = last.clone().add(new THREE.Vector3(0.5, -0.5, 0));
       const linePreMid2 = last.clone().add(new THREE.Vector3(-0.5, 0., 0));
@@ -247,10 +243,39 @@ export default function Viewer() {
   });
   circuitComponents.push(<ElectricalLine points={[last, [-2,last.y,0], [-2,3,0], [-0.4,3,0]]}
                           voltage={lastVoltage} current={circuitCurrent} key={`lastLine`} />);
+  return (<group>{circuitComponents}</group>)
+}
 
+
+export default function Viewer() {
+  const [circuitValue, changeCircuit] = useState([
+    [15],
+    [30, 100],
+    [5],
+  ]);
+  const [batteryVoltageValue, changeBatteryVoltage] = useState(7);
+
+  function circuitChange(ev){
+    const textarea = ev.target.value;
+    const lines = textarea.split('\n');
+    const circuit = lines.map(line => line.split(' ').map(parseFloat)).filter(resistors => resistors.every(r => !isNaN(r)));
+    console.log(circuit)
+    changeCircuit(circuit);
+  }
   return (
+    <div className="Viewer">
+    <div className="panel">
+      <h2>Circuit Configuration</h2>
+      <h3>Battery</h3>
+      <label>Voltage:</label>
+      <input type="number" defaultValue="7" min="0" onChange={ev => changeBatteryVoltage(parseFloat(ev.target.value))}></input>
+      <h3>Resistors</h3>
+      <textarea defaultValue="15&#13;&#10;30 100&#13;&#10;5" rows="6" onChange={ev => circuitChange(ev)}>
+      </textarea>
+    </div>
     <Canvas>
-      {circuitComponents}
+      <Circuit circuit={circuitValue} batteryVoltage={batteryVoltageValue}></Circuit>
     </Canvas>
+    </div>
   )
 }
