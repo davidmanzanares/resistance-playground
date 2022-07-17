@@ -1,7 +1,7 @@
 import * as THREE from 'three'
 import * as React from 'react'
 import { Canvas, useFrame } from '@react-three/fiber'
-import { Line, Point, Points } from '@react-three/drei'
+import { Line, Point, Points, Text } from '@react-three/drei'
 import { useRef } from 'react'
 
 function clamp(x, min, max){
@@ -171,6 +171,9 @@ export default function Viewer() {
   const circuitComponents = [];
   const battery = (<Battery negative={[-0.4,3,0]} positive={[0.1,3,0]} key="battery"/>);
   circuitComponents.push(battery);
+  circuitComponents.push((<Text color="white" fontSize={0.12} anchorX="center" anchorY="middle" position={[-0.15,2.35,0]} key="batteryLabel">
+  {batteryVoltage} V
+</Text>))
   const startDynamic = [2,2.5,0];
   const firstLine = (<ElectricalLine points={[[0.1,3,0], [2,3,0], startDynamic]} voltage={batteryVoltage} current={circuitCurrent} key="firstLine" />)
   circuitComponents.push(firstLine);
@@ -184,6 +187,10 @@ export default function Viewer() {
       const lineEnd = resistorEnd.clone().add(new THREE.Vector3(0, -0.5, 0));
       const resistor = (<Resistor src={last} dst={resistorEnd} key={`R${i}`} />);
       circuitComponents.push(resistor);
+      const labelPosition = last.clone().add(resistorEnd).multiplyScalar(0.5).add(new THREE.Vector3(0.5, 0, 0));
+      circuitComponents.push((<Text color="white" fontSize={0.12} anchorX="center" anchorY="middle" position={labelPosition} key={`R${i}_label`}>
+      {resistors[0]} Ohm
+    </Text>))
       circuitComponents.push(<ElectricalLine points={[resistorEnd,  lineEnd]} voltage={vPostResistor} current={circuitCurrent} key={`L${i}`} />);
       last = lineEnd;
       lastVoltage = vPostResistor;
@@ -208,6 +215,16 @@ export default function Viewer() {
       circuitComponents.push(<ElectricalLine points={[last, linePreMid2, linePreEnd2]} voltage={lastVoltage} current={current2} key={`Lpre${i}_2`} />);
       circuitComponents.push(<Resistor src={linePreEnd1} dst={resistorEnd1} key={`R${i}_1`} />);
       circuitComponents.push(<Resistor src={linePreEnd2} dst={resistorEnd2} key={`R${i}_2`} />);
+
+      const labelPosition1 = linePreEnd1.clone().add(resistorEnd1).multiplyScalar(0.5).add(new THREE.Vector3(0.45, 0, 0));
+      circuitComponents.push((<Text color="white" fontSize={0.1} anchorX="center" anchorY="middle" position={labelPosition1} key={`R${i}_1_label`}>
+      {resistors[0]} Ohm
+    </Text>));
+      const labelPosition2 = linePreEnd2.clone().add(resistorEnd2).multiplyScalar(0.5).add(new THREE.Vector3(0.45, 0, 0));
+          circuitComponents.push((<Text color="white" fontSize={0.1} anchorX="center" anchorY="middle" position={labelPosition2} key={`R${i}_2_label`}>
+          {resistors[1]} Ohm
+        </Text>))
+
       circuitComponents.push(<ElectricalLine points={[resistorEnd1, linePostMid1, postResistorJunction]}
                               voltage={vPostResistors} current={current1} key={`Lpost${i}_1`} />);
       circuitComponents.push(<ElectricalLine points={[resistorEnd2, linePostMid2, postResistorJunction]}
