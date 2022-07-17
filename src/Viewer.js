@@ -1,8 +1,8 @@
 import * as THREE from 'three'
 import * as React from 'react'
 import { Canvas, useFrame } from '@react-three/fiber'
-import { Line, Point, Points, Text } from '@react-three/drei'
-import { useRef } from 'react'
+import { Box, Line, Point, Points, Text } from '@react-three/drei'
+import { useRef, useState } from 'react'
 
 function clamp(x, min, max){
   return Math.min(Math.max(x, min), max);
@@ -54,9 +54,12 @@ function ElectricalLine(props){
       ref.current.position.set(p.x, p.y, p.z);
     });
   });
+  const [hovered, hover] = useState(new THREE.Vector3(10000,0,0));
   return (
     <group>
+    <group onPointerMove={ev => {hover(ev.point)}} onPointerLeave={ev=> hover(new THREE.Vector3(10000,0,0))}>
       {lines}
+    </group>
       <Points
         limit={1000} // Optional: max amount of items (for calculating buffer size)
         range={1000} // Optional: draw-range
@@ -64,6 +67,9 @@ function ElectricalLine(props){
         <pointsMaterial  color={color} size={0.06}/>
         {electricPoints}
       </Points>
+    <Text color="white" fontSize={0.1} anchorX="left" anchorY="bottom" position={hovered}>
+      {Math.round(props.current*1000)} mA // {props.voltage.toFixed(1)} V
+       </Text>
     </group>
   )
 }
@@ -109,10 +115,9 @@ class Battery extends React.Component{
   }
 }
 
-class Resistor extends React.Component{
-  render(){
-    const src = new THREE.Vector3(...this.props.src);
-    const dst = new THREE.Vector3(...this.props.dst);
+function Resistor (props) {
+    const src = new THREE.Vector3(...props.src);
+    const dst = new THREE.Vector3(...props.dst);
     const center = src.clone().add(dst).multiplyScalar(0.5);
     const diff = dst.clone().sub(src);
     const dir = diff.clone().normalize();
@@ -133,8 +138,11 @@ class Resistor extends React.Component{
       />);
     });
 
+    const [hovered, hover] = useState(new THREE.Vector3(10000,0,0));
     return (
       <group>
+      <Box position={center} args={[0.5,1.5,0.0001]} visible={false} 
+        onPointerMove={ev => {hover(ev.point)}} onPointerLeave={ev=> hover(new THREE.Vector3(10000,0,0))}/>
       <Line
         points={[src, start]}
         color="red"
@@ -146,9 +154,11 @@ class Resistor extends React.Component{
         lineWidth={1}
         />
       {middleLines}
+      <Text color="white" fontSize={0.1} anchorX="center" anchorY="middle" position={hovered}>
+      {Math.round(props.current*1000)} mA
+       </Text>
       </group>
     )
-  }
 }
 
 
@@ -185,7 +195,7 @@ export default function Viewer() {
       const vPostResistor = lastVoltage - circuitCurrent * resistors[0];
       const resistorEnd = last.clone().add(new THREE.Vector3(0, -1.2, 0));
       const lineEnd = resistorEnd.clone().add(new THREE.Vector3(0, -0.5, 0));
-      const resistor = (<Resistor src={last} dst={resistorEnd} key={`R${i}`} />);
+      const resistor = (<Resistor src={last} dst={resistorEnd} key={`R${i}`} current={circuitCurrent} />);
       circuitComponents.push(resistor);
       const labelPosition = last.clone().add(resistorEnd).multiplyScalar(0.5).add(new THREE.Vector3(0.5, 0, 0));
       circuitComponents.push((<Text color="white" fontSize={0.12} anchorX="center" anchorY="middle" position={labelPosition} key={`R${i}_label`}>
@@ -213,8 +223,8 @@ export default function Viewer() {
       const lineFinish = new THREE.Vector3(last.x, linePostMid1.y-0.5, last.z);
       circuitComponents.push(<ElectricalLine points={[last, linePreMid1, linePreEnd1]} voltage={lastVoltage} current={current1} key={`Lpre${i}_1`} />);
       circuitComponents.push(<ElectricalLine points={[last, linePreMid2, linePreEnd2]} voltage={lastVoltage} current={current2} key={`Lpre${i}_2`} />);
-      circuitComponents.push(<Resistor src={linePreEnd1} dst={resistorEnd1} key={`R${i}_1`} />);
-      circuitComponents.push(<Resistor src={linePreEnd2} dst={resistorEnd2} key={`R${i}_2`} />);
+      circuitComponents.push(<Resistor src={linePreEnd1} dst={resistorEnd1} key={`R${i}_1`} current={current1} />);
+      circuitComponents.push(<Resistor src={linePreEnd2} dst={resistorEnd2} key={`R${i}_2`} current={current2} />);
 
       const labelPosition1 = linePreEnd1.clone().add(resistorEnd1).multiplyScalar(0.5).add(new THREE.Vector3(0.45, 0, 0));
       circuitComponents.push((<Text color="white" fontSize={0.1} anchorX="center" anchorY="middle" position={labelPosition1} key={`R${i}_1_label`}>
