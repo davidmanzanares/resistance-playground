@@ -150,11 +150,53 @@ class Resistor extends React.Component{
 
 
 export default function Viewer() {
+  const circuitComponents = [];
+  const battery = (<Battery negative={[-0.4,3,0]} positive={[0.1,3,0]} key="battery"/>);
+  circuitComponents.push(battery);
+  const startDynamic = [2,2,0];
+  const firstLine = (<ElectricalLine points={[[0.1, 3, 0], [2,3,0], startDynamic]} voltage={1} current={0.5} key="firstLine"></ElectricalLine>)
+  circuitComponents.push(firstLine);
+
+  let last = new THREE.Vector3(...startDynamic);
+  const circuit = [
+    [5, 3],
+    [7],
+  ];
+
+  circuit.forEach((resistors, i) => {
+    if (resistors.length === 1){
+      const resistorEnd = last.clone().add(new THREE.Vector3(0, -1.2, 0));
+      const lineEnd = resistorEnd.clone().add(new THREE.Vector3(0, -0.5, 0));
+      const resistor = (<Resistor src={last} dst={resistorEnd} key={`R${i}`} />);
+      circuitComponents.push(resistor);
+      circuitComponents.push(<ElectricalLine points={[resistorEnd,  lineEnd]} voltage={1} current={0.5} key={`L${i}`} />);
+      last = lineEnd;
+    } else if (resistors.length === 2) {
+      const linePreMid1 = last.clone().add(new THREE.Vector3(0.5, 0., 0));
+      const linePreEnd1 = last.clone().add(new THREE.Vector3(0.5, -0.5, 0));
+      const linePreMid2 = last.clone().add(new THREE.Vector3(-0.5, 0., 0));
+      const linePreEnd2 = last.clone().add(new THREE.Vector3(-0.5, -0.5, 0));
+      const resistorEnd1 = linePreEnd1.clone().add(new THREE.Vector3(0, -1.2, 0));
+      const resistorEnd2 = linePreEnd2.clone().add(new THREE.Vector3(0, -1.2, 0));
+      const linePostMid1 = resistorEnd1.clone().add(new THREE.Vector3(0, -0.5, 0));
+      const linePostMid2 = resistorEnd2.clone().add(new THREE.Vector3(0, -0.5, 0));
+      const postResistorJunction = new THREE.Vector3(last.x, linePostMid1.y, last.z);
+      const lineFinish = new THREE.Vector3(last.x, linePostMid1.y-0.5, last.z);
+      circuitComponents.push(<ElectricalLine points={[last, linePreMid1, linePreEnd1]} voltage={1} current={0.5} key={`Lpre${i}_1`} />);
+      circuitComponents.push(<ElectricalLine points={[last, linePreMid2, linePreEnd2]} voltage={1} current={0.5} key={`Lpre${i}_2`} />);
+      circuitComponents.push(<Resistor src={linePreEnd1} dst={resistorEnd1} key={`R${i}_1`} />);
+      circuitComponents.push(<Resistor src={linePreEnd2} dst={resistorEnd2} key={`R${i}_2`} />);
+      circuitComponents.push(<ElectricalLine points={[resistorEnd1, linePostMid1, postResistorJunction]} voltage={1} current={0.5} key={`Lpost${i}_1`} />);
+      circuitComponents.push(<ElectricalLine points={[resistorEnd2, linePostMid2, postResistorJunction]} voltage={1} current={0.5} key={`Lpost${i}_2`} />);
+      circuitComponents.push(<ElectricalLine points={[postResistorJunction, lineFinish]} voltage={1} current={0.5} key={`Lafter${i}_2`} />);
+      last = lineFinish;
+    }
+  });
+  circuitComponents.push(<ElectricalLine points={[last, [-2,last.y,0], [-2,3,0], [-0.4,3,0]]} voltage={1} current={0.5} key={`lastLine`} />);
+
   return (
     <Canvas>
-      <Battery negative={[-0.4,3,0]} positive={[0.1,3,0]}></Battery>
-      <ElectricalLine points={[[0.1, 3, 0], [2,3,0], [2,0,0]]} voltage={1} current={0.5}></ElectricalLine>
-      <Resistor src={[-2,-1,0]} dst={[2, -1, 0]}></Resistor>
+      {circuitComponents}
     </Canvas>
   )
 }
