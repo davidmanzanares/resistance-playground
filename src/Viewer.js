@@ -1,7 +1,7 @@
 import * as THREE from 'three'
 import * as React from 'react'
 import { Canvas, useFrame } from '@react-three/fiber'
-import { Box, Line, Point, Points, Text } from '@react-three/drei'
+import { Box, Line, MapControls, OrthographicCamera, Point, Points, Text } from '@react-three/drei'
 import { useRef, useState } from 'react'
 
 const RESISTOR_COLOR = "#f33"
@@ -68,7 +68,7 @@ function ElectricalLine(props){
         limit={1000} // Optional: max amount of items (for calculating buffer size)
         range={1000} // Optional: draw-range
       >
-        <pointsMaterial  color={color} size={0.06}/>
+        <pointsMaterial  color={color} size={6}/>
         {electricPoints}
       </Points>
     <Text color="white" fontSize={0.1} anchorX="left" anchorY="bottom" position={hovered}>
@@ -274,6 +274,8 @@ export default function Viewer() {
       </textarea>
     </div>
     <Canvas>
+      <OrthographicCamera makeDefault position={[0, 0, 10]} zoom={120} />
+      <MapControls target={[0,0,0]} screenSpacePanning={true} enableRotate={false}/>
       <Circuit circuit={circuitValue} batteryVoltage={batteryVoltageValue}></Circuit>
     </Canvas>
     </div>
