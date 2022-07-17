@@ -30,3 +30,7 @@ body,
   padding: 16px;
   z-index: 10;
 }
+
+input{
+  margin-left: 8px;
+}
